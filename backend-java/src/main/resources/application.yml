@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: ssl-monitor
+
+  datasource:
+    url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3306}/${DB_NAME:ssl_monitor}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: ${DB_USER:ssl_monitor}
+    password: ${DB_PASS:ssl_monitor_pwd}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 10000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: false
+    show-sql: false
+
+  jackson:
+    default-property-inclusion: always
+
+# 说明：以 war 部署到独立 Tomcat 时，server.port 与 context-path 由 Tomcat 控制，
+# 此处的 server.* 配置在 war 模式下不生效。Docker 部署时 Tomcat 端口为 8091，
+# context-path 取决于 war 文件名（ssl-monitor.war -> /ssl-monitor）。
+server:
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+
+logging:
+  level:
+    com.sslmonitor: INFO

@@ -1,0 +1,70 @@
+# =============================================================
+#  docker-compose 标准版（bridge 网络 + 独立 MySQL 容器）
+#  适用于全新环境，三个服务全部容器化，无需宿主机安装任何软件。
+#  使用方法：
+#    1. cp .env.example .env   （编辑 .env 填入实际密码）
+#    2. docker compose -f docker-compose.bridge.yml up -d --build
+# =============================================================
+
+services:
+  # ---- 前端 Nginx ----
+  frontend:
+    build: ./frontend
+    image: ssl-monitor-frontend:latest
+    container_name: ssl-monitor-frontend
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    depends_on:
+      - backend
+    environment:
+      - BACKEND_URL=http://backend:8080
+      - TZ=${TZ:-Asia/Dubai}
+
+  # ---- 后端 Tomcat (WAR) ----
+  # Dockerfile 中端口已改为 8091/8195（host 模式），
+  # bridge 模式通过 command sed 回 8080/8005
+  backend:
+    build:
+      context: ./backend-java
+      network: host
+    image: ssl-monitor-backend:latest
+    container_name: ssl-monitor-backend
+    restart: unless-stopped
+    depends_on:
+      - mysql
+    command:
+      - /bin/bash
+      - -c
+      - |
+        sed -i 's/port="8091"/port="8080"/' /usr/local/tomcat/conf/server.xml
+        sed -i 's/port="8195"/port="8005"/' /usr/local/tomcat/conf/server.xml
+        exec catalina.sh run
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=${DB_NAME:-ssl_monitor}
+      - DB_USER=${DB_USER:-ssl_monitor}
+      - DB_PASS=${DB_PASS:?请在 .env 中设置 DB_PASS}
+      - TZ=${TZ:-Asia/Dubai}
+
+  # ---- MySQL ----
+  mysql:
+    image: mysql:8.0
+    container_name: ssl-monitor-mysql
+    restart: unless-stopped
+    ports:
+      - "3307:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root_pwd}
+      - MYSQL_DATABASE=${DB_NAME:-ssl_monitor}
+      - MYSQL_USER=${DB_USER:-ssl_monitor}
+      - MYSQL_PASSWORD=${DB_PASS:-ssl_monitor_pwd}
+      - TZ=${TZ:-Asia/Dubai}
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./deploy/mysql-init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+volumes:
+  mysql-data:

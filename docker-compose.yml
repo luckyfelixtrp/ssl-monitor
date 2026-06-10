@@ -1,0 +1,28 @@
+services:
+  # ---- 前端 Nginx ----
+  # host 网络：Nginx 监听 8090，代理到后端 127.0.0.1:8091
+  # 适用于服务器已有 MySQL / 需复用宿主机网络的场景
+  frontend:
+    image: ssl-monitor-frontend:latest
+    container_name: ssl-monitor-frontend
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - BACKEND_URL=http://127.0.0.1:8091
+      - TZ=${TZ:-Asia/Dubai}
+
+  # ---- 后端 Tomcat (WAR) ----
+  # host 网络：Tomcat 端口已在 Dockerfile 中改为 8091/8195
+  # 连接宿主机现有 MySQL
+  backend:
+    image: ssl-monitor-backend:latest
+    container_name: ssl-monitor-backend
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - DB_HOST=${DB_HOST:-127.0.0.1}
+      - DB_PORT=${DB_PORT:-3306}
+      - DB_NAME=${DB_NAME:-ssl_monitor}
+      - DB_USER=${DB_USER:-ssl_monitor}
+      - DB_PASS=${DB_PASS:?请在 .env 中设置 DB_PASS}
+      - TZ=${TZ:-Asia/Dubai}
