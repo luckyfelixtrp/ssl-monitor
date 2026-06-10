@@ -53,5 +53,14 @@ def data_dir() -> Path:
 
 
 def frontend_dir() -> Path:
-    """前端 HTML 所在目录"""
-    return resource_dir() / "frontend"
+    """
+    前端构建产物所在目录：
+    - 源码运行: frontend/dist/（需先 npm run build）
+    - PyInstaller onefile: _MEIPASS/frontend/dist/
+    """
+    base = resource_dir() / "frontend"
+    dist = base / "dist"
+    # 优先用 dist/（Vue 构建产物），没有则回退到 frontend/（兼容旧的单文件 HTML）
+    if dist.exists():
+        return dist
+    return base

@@ -195,8 +195,4 @@ def health():
 
 # ---------- Frontend ----------
 if FRONTEND_DIR.exists():
-    app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
-
-    @app.get("/")
-    def index():
-        return FileResponse(FRONTEND_DIR / "index.html")
+    app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="static")
