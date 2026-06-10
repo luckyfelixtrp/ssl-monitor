@@ -52,8 +52,8 @@ public class DomainController {
         try {
             d = domainService.addDomain(host, port, req.getRemark());
         } catch (IllegalStateException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "添加失败（可能已存在相同 host:port）: " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "域名 " + host + ":" + port + " 已存在，请勿重复添加");
         }
 
         try {
