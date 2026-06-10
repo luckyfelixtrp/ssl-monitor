@@ -1,7 +1,10 @@
 """FastAPI 主入口"""
 import asyncio
 import logging
+import os
+import platform
 import re
+import subprocess
 from contextlib import asynccontextmanager
 from pathlib import Path
 from urllib.parse import urlparse
@@ -16,7 +19,7 @@ from pydantic import BaseModel, Field
 
 import database as db
 from checker import check_certificate
-from utils import frontend_dir
+from utils import data_dir, frontend_dir
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("ssl-monitor")
@@ -197,6 +200,29 @@ def api_history(domain_id: int, limit: int = 30):
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/api/data-path")
+def api_data_path():
+    """返回数据目录路径"""
+    return {"path": str(data_dir())}
+
+
+@app.post("/api/open-data-dir")
+def api_open_data_dir():
+    """用系统文件管理器打开数据目录"""
+    p = str(data_dir())
+    system = platform.system()
+    try:
+        if system == "Windows":
+            os.startfile(p)  # noqa: S606
+        elif system == "Darwin":
+            subprocess.Popen(["open", p])  # noqa: S603
+        else:
+            subprocess.Popen(["xdg-open", p])  # noqa: S603
+        return {"ok": True, "path": p}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"无法打开目录: {e}")
 
 
 # ---------- Frontend ----------

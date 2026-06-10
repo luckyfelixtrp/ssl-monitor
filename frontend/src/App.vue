@@ -6,6 +6,7 @@
         <p class="text-sm text-gray-500 mt-1">监控域名 HTTPS 证书的到期时间、安全配置与可用性</p>
       </div>
       <div class="flex gap-2">
+        <button v-if="dataPath" @click="openDataDir" class="px-3 py-2 bg-white border border-gray-300 rounded text-sm hover:bg-gray-100" :title="dataPath">📂 数据目录</button>
         <button @click="loadDomains" class="px-3 py-2 bg-white border border-gray-300 rounded text-sm hover:bg-gray-100">刷新列表</button>
         <button @click="checkAll" class="px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">扫描全部</button>
         <button @click="openAdd" class="px-3 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700">+ 添加域名</button>
@@ -140,6 +141,7 @@ export default {
       detailLoading: false,
       detailError: '',
       refreshTimer: null,
+      dataPath: '',
     }
   },
   computed: {
@@ -180,6 +182,13 @@ export default {
         return `<span class="text-green-600">${d.status_code || 'OK'}</span><span class="text-gray-400 text-xs ml-1">${d.response_ms || 0}ms</span>`;
       }
       return d.checked_at ? '<span class="text-red-500">不可达</span>' : '<span class="text-gray-400">-</span>';
+    },
+    async openDataDir() {
+      try {
+        await api('/api/open-data-dir', { method: 'POST' });
+      } catch (e) {
+        alert('打开失败: ' + e.message);
+      }
     },
     async loadDomains() {
       try {
@@ -265,6 +274,8 @@ export default {
   },
   mounted() {
     this.loadDomains();
+    // 桌面版支持：获取数据目录路径（Web 版无此 API 则不显示按钮）
+    api('/api/data-path').then(r => { this.dataPath = r.path; }).catch(() => {});
     this.refreshTimer = setInterval(() => this.loadDomains(), 60000);
   },
   beforeUnmount() {
