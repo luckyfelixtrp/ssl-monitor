@@ -93,6 +93,16 @@ def add_domain(host: str, port: int = 443, remark: str = "") -> int:
         return cursor.lastrowid
 
 
+def find_domain(host: str, port: int = 443) -> dict[str, Any] | None:
+    """按 host+port 查找域名，返回 {id, host, port, remark} 或 None"""
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT id, host, port, remark FROM domains WHERE host=? AND port=?",
+            (host, port),
+        ).fetchone()
+        return dict(row) if row else None
+
+
 def delete_domain(domain_id: int) -> None:
     with get_conn() as conn:
         conn.execute("DELETE FROM domains WHERE id = ?", (domain_id,))

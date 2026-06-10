@@ -132,6 +132,10 @@ async def api_add_domain(payload: DomainIn):
         domain_id = db.add_domain(host, port, payload.remark)
     except Exception as e:
         if "UNIQUE" in str(e):
+            # 幂等处理：已存在则返回已有记录
+            existing = db.find_domain(host, port)
+            if existing:
+                return existing
             raise HTTPException(status_code=409, detail=f"域名 {host}:{port} 已存在，请勿重复添加")
         raise HTTPException(status_code=400, detail=f"添加失败: {e}")
     # 立刻执行一次检测
